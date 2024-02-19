@@ -1,0 +1,41 @@
+version: 2.1
+
+orbs:
+  flyio: flyio/flyctl@1.0.0
+
+jobs:
+  build:
+    docker:
+      - image: circleci/node:14
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: npm install
+      - run:
+          name: Build Svelte app
+          command: npm run build
+
+  deploy:
+    docker:
+      - image: circleci/node:14
+    steps:
+      - checkout
+      - flyio/install
+      - flyio/login:
+          token: ${FLY_API_TOKEN}
+    - run:
+        name: Deploy to Fly.io
+        command: flyctl deploy
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: main
